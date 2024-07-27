@@ -2,7 +2,7 @@
 FROM python:3.9
 
 # 设置工作目录为 /app
-WORKDIR /app
+WORKDIR /
 
 # 将 requirements.txt 复制到工作目录
 COPY requirements.txt requirements.txt
@@ -14,7 +14,7 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # 暴露容器的端口
-EXPOSE 5003
+EXPOSE 5000
 
 # 运行 Flask 应用
 CMD ["python", "app.py"]
