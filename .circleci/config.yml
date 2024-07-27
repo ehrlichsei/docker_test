@@ -1,34 +1,45 @@
-# This config was automatically generated from your source code
-# Stacks detected: deps:python:.
 version: 2.1
+
 orbs:
-  python: circleci/python@2
+  docker: circleci/docker@2.0
+  heroku: circleci/heroku@2.0
+  python: circleci/python@2.0
+
 jobs:
-  test-python:
-    # Install dependencies and run tests
+  build:
     docker:
-      - image: cimg/python:3.8-node
+      - image: circleci/python:3.9
     steps:
       - checkout
-      - python/install-packages
       - run:
-          name: Run tests
-          command: pytest --junitxml=junit.xml || ((($? == 5)) && echo 'Did not find any tests to run.')
-      - store_test_results:
-          path: junit.xml
+          name: Install Docker
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+      - run:
+          name: Build Docker Image
+          command: |
+            docker build --platform linux/amd64 -t registry.heroku.com/${HEROKU_APP_NAME}/web .
+      - run:
+          name: Push Docker Image
+          command: |
+            echo "${HEROKU_API_KEY}" | docker login --username _ --password-stdin registry.heroku.com
+            docker push registry.heroku.com/${HEROKU_APP_NAME}/web
   deploy:
-    # This is an example deploy job, not actually used by the workflow
     docker:
-      - image: cimg/base:stable
+      - image: circleci/python:3.9
     steps:
-      # Replace this with steps to deploy to users
+      - checkout
       - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
+          name: Deploy to Heroku
+          command: |
+            echo "${HEROKU_API_KEY}" | heroku auth:token
+            heroku container:release web --app ${HEROKU_APP_NAME}
 workflows:
-  build-and-test:
+  version: 2
+  deploy:
     jobs:
-      - test-python
-    # - deploy:
-    #     requires:
-    #       - test-python
+      - build
+      - deploy:
+          requires:
+            - build
