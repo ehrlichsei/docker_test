@@ -10,18 +10,17 @@ jobs:
       - image: circleci/python:3.9
     steps:
       - checkout
-      - docker/with-docker:
-          version: '20.10.7'
-          steps:
-            - run:
-                name: Build Docker Image
-                command: |
-                  docker build --platform linux/amd64 -t registry.heroku.com/${HEROKU_APP_NAME}/web .
-            - run:
-                name: Push Docker Image
-                command: |
-                  echo "${HEROKU_API_KEY}" | docker login --username _ --password-stdin registry.heroku.com
-                  docker push registry.heroku.com/${HEROKU_APP_NAME}/web
+      - setup_remote_docker:  # 使用官方提供的 setup_remote_docker 功能
+          version: 20.10.7
+      - run:
+          name: Build Docker Image
+          command: |
+            docker build --platform linux/amd64 -t registry.heroku.com/${HEROKU_APP_NAME}/web .
+      - run:
+          name: Push Docker Image
+          command: |
+            echo "${HEROKU_API_KEY}" | docker login --username _ --password-stdin registry.heroku.com
+            docker push registry.heroku.com/${HEROKU_APP_NAME}/web
   deploy:
     docker:
       - image: circleci/python:3.9
